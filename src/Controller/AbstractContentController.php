@@ -2,16 +2,18 @@
 
 namespace MartenaSoft\Content\Controller;
 
+use MartenaSoft\Common\Controller\AbstractCommonController;
 use MartenaSoft\Common\Entity\PageData;
 use MartenaSoft\Common\Entity\PageDataInterface;
+use MartenaSoft\Common\EventSubscriber\CommonSubscriber;
 use MartenaSoft\Content\Service\ParserUrlService;
 use MartenaSoft\Menu\Entity\MenuInterface;
 use MartenaSoft\Menu\Repository\MenuRepository;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-abstract class AbstractContentController extends AbstractController
+abstract class AbstractContentController extends AbstractCommonController
 {
     protected ParserUrlService $parserUrlService;
     protected MenuRepository $menuRepository;
@@ -24,6 +26,7 @@ abstract class AbstractContentController extends AbstractController
 
     public function page(Request $request, string $path): Response
     {
+        dump(CommonSubscriber::getConfigs());
         $rootNode = $this->getRootMenuEntity();
 
         $pageData = new PageData();
