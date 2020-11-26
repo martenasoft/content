@@ -11,7 +11,8 @@ use MartenaSoft\Menu\Repository\MenuRepository;
 
 class ParserUrlService
 {
-    protected const DETAIL_SLIDER = '.html';
+    public const DETAIL_SLIDER = '.html';
+    private bool $isDetailPage = false;
     private int $page = 1;
     private MenuRepository $menuRepository;
 
@@ -24,27 +25,36 @@ class ParserUrlService
     {
         $url = preg_replace('/\/{2,}/', '/', $path);
         $urlArray = explode('/', $url);
-        $lastUrl = end($urlArray);
+        $lastUrl = array_pop($urlArray);
+
         if (is_numeric($lastUrl) && ($page = intval($lastUrl)) > 0) {
             $this->page = $page;
             $lastUrl = isset($urlArray[count($urlArray) - 2]) ? $urlArray[count($urlArray) - 2] : null;
         }
 
-        if (preg_match('/(.*)\\'.self::DETAIL_SLIDER.'/', $lastUrl, $matches) && isset($matches[1])) {
+        if (preg_match('/(.*)\\' . self::DETAIL_SLIDER . '/', $lastUrl, $matches) && isset($matches[1])) {
             $lastUrl = $matches[1];
+            $this->isDetailPage = true;
         }
+
+        $urlArray[] = $lastUrl;
 
         if (empty($rootNode) || empty($config = $rootNode->getConfig())) {
             return null;
         }
 
+        $lastMenuItem = null;
         switch ($config->getUrlPathType()) {
             case Config::URL_TYPE_PATH:
-                    $this->validateUrlPathType($rootNode, $urlArray);
+               $lastMenuItem = $this->validateUrlPathType($rootNode, $urlArray);
                 break;
         }
+        return $lastMenuItem;
+    }
 
-        die;
+    public function isDetailPage(): bool
+    {
+        return $this->isDetailPage;
     }
 
     public function getPage(): int
@@ -52,29 +62,22 @@ class ParserUrlService
         return $this->page;
     }
 
-    protected function validateUrlPathType(MenuInterface $menu, array $urlArray): void
+    protected function validateUrlPathType(MenuInterface $menu, array $urlArray): ?MenuInterface
     {
         $allItems = $this->menuRepository->getAllSubItemsQueryBuilder($menu)->getQuery()->getResult();
-
-        $firstMenu = array_shift($urlArray);
-
-        if ($menu->getTransliteratedUrl() != $firstMenu) {
-            throw new ParseUrlErrorException([$menu], [$firstMenu]);
-        }
-
-        foreach ($allItems as $i=>$item) {
-            if (empty($itemUrl = $urlArray[$i])) {
-                throw new ParseUrlErrorException([$item], [$itemUrl]);
+        array_unshift($allItems, $menu);
+        $count = count($urlArray);
+        foreach ($urlArray as $i => $url) {
+            if (empty($allItems[$i])) {
+                throw new ParseUrlErrorException([$url], []);
             }
-
-            $itemUrl = str_replace(self::DETAIL_SLIDER, '', $itemUrl);
-
-            if ($itemUrl != $item->getTransliteratedUrl()) {
-                throw new ParseUrlErrorException([$item], [$itemUrl]);
+            $item = $allItems[$i]->getTransliteratedUrl();
+            if ($url != $item) {
+                throw new ParseUrlErrorException([$url], [$item]);
             }
-            dump($item, $itemUrl);
+            if ($i == $count - 1) {
+                return $allItems[$i];
+            }
         }
-        die;
-       // dump($menu, $urlArray, $allItems);
     }
 }

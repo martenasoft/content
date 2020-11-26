@@ -2,14 +2,53 @@
 
 namespace MartenaSoft\Content\Controller;
 
-use MartenaSoft\Common\Entity\CommonEntityInterface;
-use MartenaSoft\Menu\Entity\Config;
-use MartenaSoft\Menu\Entity\Menu;
+use MartenaSoft\Common\Entity\PageData;
+use MartenaSoft\Common\Entity\PageDataInterface;
+use MartenaSoft\Content\Service\ParserUrlService;
+use MartenaSoft\Menu\Entity\MenuInterface;
 use MartenaSoft\Menu\Repository\MenuRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 abstract class AbstractContentController extends AbstractController
 {
+    protected ParserUrlService $parserUrlService;
+    protected MenuRepository $menuRepository;
 
+    public function __construct(ParserUrlService $parserUrlService, MenuRepository $menuRepository)
+    {
+        $this->parserUrlService = $parserUrlService;
+        $this->menuRepository = $menuRepository;
+    }
+
+    public function page(Request $request, string $path): Response
+    {
+        $rootNode = $this->getRootMenuEntity();
+
+        $pageData = new PageData();
+
+        if (!empty($rootNode)) {
+            $activeMenu = $this->parserUrlService->getActiveEntityByUrl($rootNode, $path);
+            $pageData
+                ->setActiveMenu($activeMenu)
+                ->setRootNode($rootNode)
+                ->setPage($this->parserUrlService->getPage())
+                ->setIsDetail($this->parserUrlService->isDetailPage())
+            ;
+        }
+
+        $pageData->setContentConfig($this->getConfig($pageData->getPath()));
+
+        $pageData
+            ->setPath($path);
+
+        return $this->getResponse($pageData);
+    }
+
+    abstract protected function getRootMenuEntity(): ?MenuInterface;
+
+    abstract protected function getConfig(string $url): ?ConfigInterface;
+
+    abstract protected function getResponse(PageDataInterface $pageData): Response;
 }

@@ -1,2 +1,3 @@
-content:
+content_all:
   resource: '@MartenaSoftContentBundle/Resources/config/routes/admin.yaml'
+  prefix: /admin/article
