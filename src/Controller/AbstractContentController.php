@@ -6,6 +6,7 @@ use MartenaSoft\Common\Controller\AbstractCommonController;
 use MartenaSoft\Common\Entity\PageData;
 use MartenaSoft\Common\Entity\PageDataInterface;
 use MartenaSoft\Common\EventSubscriber\CommonSubscriber;
+use MartenaSoft\Content\Entity\ConfigInterface;
 use MartenaSoft\Content\Service\ParserUrlService;
 use MartenaSoft\Menu\Entity\MenuInterface;
 use MartenaSoft\Menu\Repository\MenuRepository;
