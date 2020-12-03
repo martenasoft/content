@@ -27,9 +27,7 @@ abstract class AbstractContentController extends AbstractCommonController
 
     public function page(Request $request, string $path): Response
     {
-        dump(CommonSubscriber::getConfigs());
         $rootNode = $this->getRootMenuEntity();
-
         $pageData = new PageData();
 
         if (!empty($rootNode)) {
@@ -43,9 +41,7 @@ abstract class AbstractContentController extends AbstractCommonController
         }
 
         $pageData->setContentConfig($this->getConfig($pageData->getPath()));
-
-        $pageData
-            ->setPath($path);
+        $pageData->setPath($path);
 
         return $this->getResponse($pageData);
     }
