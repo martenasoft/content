@@ -45,6 +45,7 @@ class ParserUrlService
             $this->isDetailPage = true;
         }
 
+        dump($urlArray); 
 
         $urlArray[] = $lastUrl;
         $rootUrl = $rootNode->getTransliteratedUrl();
@@ -52,18 +53,18 @@ class ParserUrlService
         $urlPath = '/' . implode("/", $urlArray);
         $path_ = '/' . $rootUrl .'/'. $path;
 
-
         if ($urlPath != $path_) {
             throw new ParseUrlErrorException("Field to compare $urlPath and $path_");
         }
-
+dump($rootUrl, $path, $lastUrl, $urlPath); die;
         $result = $this
             ->menuRepository
             ->getQueryBuilder()
-            ->where(MenuRepository::getAlias() . '.path=:path')
-            ->setParameter('path', $urlPath)
+            ->where(MenuRepository::getAlias() . '.path=:path')->setParameter('path', $urlPath)
+            ->andWhere(MenuRepository::getAlias() . '.path=:path')
             ->getQuery()
             ->getOneOrNullResult();
+
 
         if (empty($result)) {
             throw ParseUrlErrorException("Cant find url by path $urlPath");
