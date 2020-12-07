@@ -3,9 +3,9 @@
 namespace MartenaSoft\Content\Service;
 
 use MartenaSoft\Common\Entity\CommonEntityInterface;
+use MartenaSoft\Content\Exception\MenuConfigNotFound;
+use MartenaSoft\Content\Exception\MenuRootNodeNotFound;
 use MartenaSoft\Content\Exception\ParseUrlErrorException;
-use MartenaSoft\Menu\Entity\Config;
-use MartenaSoft\Menu\Entity\Menu;
 use MartenaSoft\Menu\Entity\MenuInterface;
 use MartenaSoft\Menu\Repository\MenuRepository;
 
@@ -23,6 +23,14 @@ class ParserUrlService
 
     public function getActiveEntityByUrl(MenuInterface $rootNode, string $path): ?CommonEntityInterface
     {
+        if (empty($rootNode)) {
+            throw new MenuRootNodeNotFound();
+        }
+
+        if (empty($config = $this->menuRepository->getConfig($rootNode))) {
+            throw new MenuConfigNotFound();
+        }
+
         $url = preg_replace('/\/{2,}/', '/', $path);
         $urlArray = explode('/', $url);
         $lastUrl = array_pop($urlArray);
@@ -37,19 +45,31 @@ class ParserUrlService
             $this->isDetailPage = true;
         }
 
+
         $urlArray[] = $lastUrl;
+        $rootUrl = $rootNode->getTransliteratedUrl();
+        array_unshift($urlArray, $rootUrl);
+        $urlPath = '/' . implode("/", $urlArray);
+        $path_ = '/' . $rootUrl .'/'. $path;
 
-        if (empty($rootNode) || empty($config = $rootNode->getConfig())) {
-            return null;
+
+        if ($urlPath != $path_) {
+            throw new ParseUrlErrorException("Field to compare $urlPath and $path_");
         }
 
-        $lastMenuItem = null;
-        switch ($config->getUrlPathType()) {
-            case Config::URL_TYPE_PATH:
-               $lastMenuItem = $this->validateUrlPathType($rootNode, $urlArray);
-                break;
+        $result = $this
+            ->menuRepository
+            ->getQueryBuilder()
+            ->where(MenuRepository::getAlias() . '.path=:path')
+            ->setParameter('path', $urlPath)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (empty($result)) {
+            throw ParseUrlErrorException("Cant find url by path $urlPath");
         }
-        return $lastMenuItem;
+
+        return null;
     }
 
     public function isDetailPage(): bool
@@ -65,19 +85,22 @@ class ParserUrlService
     protected function validateUrlPathType(MenuInterface $menu, array $urlArray): ?MenuInterface
     {
         $allItems = $this->menuRepository->getAllSubItemsQueryBuilder($menu)->getQuery()->getResult();
-        array_unshift($allItems, $menu);
+        // $allItems[] = $menu;
+        dump($urlArray, $allItems);
+        // array_unshift($allItems, $menu);
+
         $count = count($urlArray);
         foreach ($urlArray as $i => $url) {
             if (empty($allItems[$i])) {
                 throw new ParseUrlErrorException([$url], []);
             }
             $item = $allItems[$i]->getTransliteratedUrl();
-            if ($url != $item) {
-                throw new ParseUrlErrorException([$url], [$item]);
-            }
-            if ($i == $count - 1) {
+            dump("$url == $item");
+            if ($url == $item && $i == ($count - 1)) {
                 return $allItems[$i];
             }
         }
+        //  die;
+        throw new ParseUrlErrorException([], []);
     }
 }

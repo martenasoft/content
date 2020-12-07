@@ -30,21 +30,24 @@ abstract class AbstractContentController extends AbstractCommonController
         $rootNode = $this->getRootMenuEntity();
         $pageData = new PageData();
 
-        if (!empty($rootNode)) {
-            $activeMenu = $this->parserUrlService->getActiveEntityByUrl($rootNode, $path);
-            $pageData
-                ->setActiveMenu($activeMenu)
-                ->setRootNode($rootNode)
-                ->setPage($this->parserUrlService->getPage())
-                ->setIsDetail($this->parserUrlService->isDetailPage())
-            ;
+        if (empty($rootNode)) {
+            throw new \Exception("root node not found");
         }
+
+        $activeMenu = $this->parserUrlService->getActiveEntityByUrl($rootNode, $path);
+        $pageData
+            ->setActiveMenu($activeMenu)
+            ->setRootNode($rootNode)
+            ->setPage($this->parserUrlService->getPage())
+            ->setIsDetail($this->parserUrlService->isDetailPage());
 
         $pageData->setContentConfig($this->getConfig($pageData->getPath()));
         $pageData->setPath($path);
 
         return $this->getResponse($pageData);
     }
+
+
 
     abstract protected function getRootMenuEntity(): ?MenuInterface;
 
