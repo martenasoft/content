@@ -2,6 +2,7 @@
 
 namespace MartenaSoft\Content\Controller;
 
+use Doctrine\ORM\QueryBuilder;
 use MartenaSoft\Common\Controller\AbstractCommonController;
 use MartenaSoft\Common\Entity\PageData;
 use MartenaSoft\Common\Entity\PageDataInterface;
@@ -34,11 +35,18 @@ abstract class AbstractContentController extends AbstractCommonController
             throw new \Exception("root node not found");
         }
 
-        $activeMenu = $this->parserUrlService->getActiveEntityByUrl($rootNode, $path);
+        $activeData = $this
+            ->parserUrlService
+            ->getActiveEntityByUrl($rootNode, $path,  $this->getFindUrlQueryBuilder());
+
+        if (($page = $request->query->getInt('page', 1)) <= 1) {
+            $page = $this->parserUrlService->getPage();
+        }
+
         $pageData
-            ->setActiveMenu($activeMenu)
+            ->setActiveData($activeData)
             ->setRootNode($rootNode)
-            ->setPage($this->parserUrlService->getPage())
+            ->setPage($page)
             ->setIsDetail($this->parserUrlService->isDetailPage());
 
         $pageData->setContentConfig($this->getConfig($pageData->getPath()));
@@ -47,7 +55,10 @@ abstract class AbstractContentController extends AbstractCommonController
         return $this->getResponse($pageData);
     }
 
-
+    protected function getFindUrlQueryBuilder(): ?QueryBuilder
+    {
+        return null;
+    }
 
     abstract protected function getRootMenuEntity(): ?MenuInterface;
 
