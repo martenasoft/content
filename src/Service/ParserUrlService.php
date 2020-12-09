@@ -56,6 +56,7 @@ class ParserUrlService
         $urlPath = '/' . implode("/", $urlArray);
         $path_ = '/' . $rootUrl . '/' . $path;
 
+
         if ($urlPath != $path_) {
             throw new ParseUrlErrorException("Field to compare $urlPath and $path_");
         }
@@ -68,14 +69,14 @@ class ParserUrlService
 
 
         $queryBuilder
-            ->andWhere(MenuRepository::getAlias() . '.path=:path')->setParameter('path', $urlPath)
-            ->andWhere(MenuRepository::getAlias() . '.path=:path');
+            ->andWhere(MenuRepository::getAlias() . '.path=:path')
+            ->setParameter('path', $urlPath);
 
-        $result = $queryBuilder->getQuery()
-            ->getOneOrNullResult();
+
+        $result = $queryBuilder->getQuery()->getOneOrNullResult();
 
         if (empty($result)) {
-            throw ParseUrlErrorException("Cant find url by path $urlPath");
+            throw new ParseUrlErrorException("Cant find url by path $urlPath");
         }
 
         return $result;

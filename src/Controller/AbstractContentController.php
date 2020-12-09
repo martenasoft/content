@@ -8,12 +8,14 @@ use MartenaSoft\Common\Entity\PageData;
 use MartenaSoft\Common\Entity\PageDataInterface;
 use MartenaSoft\Common\EventSubscriber\CommonSubscriber;
 use MartenaSoft\Content\Entity\ConfigInterface;
+use MartenaSoft\Content\Exception\ParseUrlErrorException;
 use MartenaSoft\Content\Service\ParserUrlService;
 use MartenaSoft\Menu\Entity\MenuInterface;
 use MartenaSoft\Menu\Repository\MenuRepository;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 abstract class AbstractContentController extends AbstractCommonController
 {
@@ -34,25 +36,33 @@ abstract class AbstractContentController extends AbstractCommonController
         if (empty($rootNode)) {
             throw new \Exception("root node not found");
         }
+        try {
 
-        $activeData = $this
-            ->parserUrlService
-            ->getActiveEntityByUrl($rootNode, $path,  $this->getFindUrlQueryBuilder());
+            $activeData = $this
+                ->parserUrlService
+                ->getActiveEntityByUrl($rootNode, $path, $this->getFindUrlQueryBuilder());
 
-        if (($page = $request->query->getInt('page', 1)) <= 1) {
-            $page = $this->parserUrlService->getPage();
+            if (($page = $request->query->getInt('page', 1)) <= 1) {
+                $page = $this->parserUrlService->getPage();
+            }
+
+
+            $pageData
+                ->setActiveData($activeData)
+                ->setRootNode($rootNode)
+                ->setPage($page)
+                ->setIsDetail($this->parserUrlService->isDetailPage());
+
+            $pageData->setContentConfig($this->getConfig($pageData->getPath()));
+            $pageData->setPath($path);
+
+            return $this->getResponse($pageData);
+        } catch (ParseUrlErrorException $exception) {
+            throw new NotFoundHttpException();
+        } catch (\Throwable $exception) {
+            throw $exception;
         }
 
-        $pageData
-            ->setActiveData($activeData)
-            ->setRootNode($rootNode)
-            ->setPage($page)
-            ->setIsDetail($this->parserUrlService->isDetailPage());
-
-        $pageData->setContentConfig($this->getConfig($pageData->getPath()));
-        $pageData->setPath($path);
-
-        return $this->getResponse($pageData);
     }
 
     protected function getFindUrlQueryBuilder(): ?QueryBuilder
