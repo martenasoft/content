@@ -50,14 +50,14 @@ class ParserUrlService
             $this->isDetailPage = true;
         }
 
+
         $urlArray[] = $lastUrl;
         $rootUrl = $rootNode->getTransliteratedUrl();
         array_unshift($urlArray, $rootUrl);
         $urlPath = '/' . implode("/", $urlArray);
         $path_ = '/' . $rootUrl . '/' . $path;
 
-
-        if ($urlPath != $path_) {
+        if ($urlPath != $path_ && $urlPath .  self::DETAIL_SLIDER != $path_ ) {
             throw new ParseUrlErrorException("Field to compare $urlPath and $path_");
         }
 
@@ -67,11 +67,9 @@ class ParserUrlService
                 ->getQueryBuilder();
         }
 
-
         $queryBuilder
             ->andWhere(MenuRepository::getAlias() . '.path=:path')
             ->setParameter('path', $urlPath);
-
 
         $result = $queryBuilder->getQuery()->getOneOrNullResult();
 
