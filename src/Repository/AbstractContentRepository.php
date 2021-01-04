@@ -39,6 +39,8 @@ abstract class AbstractContentRepository extends AbstractCommonRepository
                 ->setParameter("deletedStatus", false);
         }
 
+        $queryBuilder->addOrderBy(static::getAlias().'.dateTime', 'DESC');
+
         return $queryBuilder;
     }
 }
