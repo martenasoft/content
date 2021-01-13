@@ -1,6 +1,6 @@
 <?php
 
-namespace MartenaSoft\Conent\Entity;
+namespace MartenaSoft\Content\Entity;
 
 use  Doctrine\ORM\Mapping as ORM;
 use MartenaSoft\Common\Library\CommonValues;
